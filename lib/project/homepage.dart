@@ -15,7 +15,7 @@ class Homepage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Matrimonial',
+        title: Text('Matrimonial App',
             style: TextStyle(fontFamily: 'Font1', fontWeight: FontWeight.w800)),
         backgroundColor: Colors.blueAccent,
       ),
