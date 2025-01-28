@@ -1,0 +1,18 @@
+  var first_name = TextEditingController();
+  var last_name = TextEditingController();
+  var address = TextEditingController();
+  var email = TextEditingController();
+  var mobile = TextEditingController();
+  var password = TextEditingController();
+  var confirm_password = TextEditingController();
+  List<String> selectedHobbies = [];
+  List<UserListData> users =[];
+  // In _AdduserState
+
+  String? selectedCity;
+  String? selectedgender;
+  int age = 0;
+  String dob = 'Select DOB';
+  DateTime? date = DateTime.now();
+
+  final _kaka = GlobalKey<FormState>();
