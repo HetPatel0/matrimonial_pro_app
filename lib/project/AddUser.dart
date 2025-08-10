@@ -1,38 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:matrimonial_app/project/UserList.dart';
+import 'package:matrimonial_app/database/databaseHelper.dart';
+import 'package:matrimonial_app/database/model.dart';
 
-class UserListData{
-  final String firstName;
-  final String lastName;
-  final String address;
-  final String email;
-  final String mobile;
-  final String? gender;
-  final String? city;
-  final String dob;
-  final int age;
-  final List<String> hobbies;
+import 'package:matrimonial_app/project/homepage.dart';
 
 
-  const UserListData({
-
-    required this.firstName,
-    required this.lastName,
-    required this.address,
-    required this.email,
-    required this.mobile,
-    this.gender,
-    this.city,
-    required this.dob,
-    required this.age,
-    required this.hobbies,
-
-  });
-}
 
 class AddUser extends StatefulWidget {
-  const AddUser({super.key});
+   UserListData? user;
+
+ AddUser({
+    Key? key,
+     this.user
+}):super (key:key);
 
   @override
   State<AddUser> createState() => _AdduserState();
@@ -47,19 +28,27 @@ class _AdduserState extends State<AddUser> {
   var password = TextEditingController();
   var confirm_password = TextEditingController();
   List<String> selectedHobbies = [];
-  List<UserListData> users =[];
-  // In _AdduserState
 
   String? selectedCity;
   String? selectedgender;
   int age = 0;
   String dob = 'Select DOB';
+
   DateTime? date = DateTime.now();
 
   final _kaka = GlobalKey<FormState>();
+  @override
+  void initState() {
+    super.initState();
+    DateTime today= DateTime.now();
+    date=DateTime(today.year-18,today.month,today.day);
+      first_name.text = widget.user?.firstName ??"";
+  }
 
   @override
   Widget build(BuildContext context) {
+
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -82,29 +71,58 @@ class _AdduserState extends State<AddUser> {
                 _buildFormRow(
                   label: "First Name:",
                   child: TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your first name';
+                      }
+                      if (!RegExp(r"^[a-zA-Z\s\-']{3,50}$")
+                          .hasMatch(value)) {
+                        return 'Enter a valid FirstName';
+                      }
+                      return null;
+                    },
                     controller: first_name,
+
                     decoration: _inputDecoration('Enter first name'),
+
                   ),
                 ),
+
                 _buildFormRow(
                   label: "Last Name:",
                   child: TextFormField(
+
                     controller: last_name,
                     decoration: _inputDecoration('Enter last name'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your last name';
+                      }
+                      if (!RegExp(r"^[a-zA-Z\s\-']{3,50}$")
+                          .hasMatch(value)) {
+                        return 'Enter a valid FirstName';                          }
+                      return null;
+                    },
                   ),
+
                 ),
-                _buildFormRow(
-                  label: "Address:",
-                  child: TextFormField(
-                    controller: address,
-                    decoration: _inputDecoration('Enter address'),
-                  ),
-                ),
+
                 _buildFormRow(
                   label: "Email:",
                   child: TextFormField(
                     controller: email,
                     decoration: _inputDecoration('Enter email'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email address';
+                      }
+                      if (!RegExp(
+                          r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+                          .hasMatch(value)) {
+                        return 'Enter a valid email';
+                      }
+                      return null;
+                    },
                     keyboardType: TextInputType.emailAddress,
                   ),
                 ),
@@ -114,12 +132,29 @@ class _AdduserState extends State<AddUser> {
                     controller: mobile,
                     decoration: _inputDecoration('Enter mobile number'),
                     keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your mobile number';
+                      }
+                      if (!RegExp(r'^\+?[0-9]{10,15}$').hasMatch(value)) {
+                        return 'Enter a valid mobile number';
+                      }
+                      return null;
+                    },
+
                   ),
                 ),
                 _buildFormRow(
                   label: "Gender:",
                   child: DropdownButtonFormField<String>(
                     decoration: _inputDecoration('Select Gender'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please Select a Gender';
+                      }
+
+                      return null;
+                    },
                     items: ['Male', 'Female', 'Others']
                         .map((gender) => DropdownMenuItem(
                       value: gender,
@@ -133,6 +168,13 @@ class _AdduserState extends State<AddUser> {
                   label: "City:",
                   child: DropdownButtonFormField<String>(
                     decoration: _inputDecoration('Select City'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select your city';
+                      }
+
+                      return null;
+                    },
                     items: ['Rajkot', 'Ahemdabad', 'Vadodara', 'Surat']
                         .map((city) => DropdownMenuItem(
                       value: city,
@@ -192,7 +234,8 @@ class _AdduserState extends State<AddUser> {
                 ),
                 SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: _submitForm,
+
+                  onPressed: addOrUpdateUser,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.indigo.shade700,
                     padding: EdgeInsets.symmetric(vertical: 16),
@@ -243,12 +286,22 @@ class _AdduserState extends State<AddUser> {
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.indigo.shade700, width: 2),
       ),
+      errorStyle: TextStyle(color: Colors.red),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.red, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.red, width: 2),
+      ),
     );
   }
 
   void _selectDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
+
       initialDate: date ?? DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
@@ -267,40 +320,84 @@ class _AdduserState extends State<AddUser> {
     }
   }
 
-  void _submitForm() {
-    if (_kaka.currentState!.validate()) {
-      if (password.text != confirm_password.text) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Passwords do not match')),
-        );
-        return;
+
+
+  // void _submitForm() {
+  //
+  //   if (!_kaka.currentState!.validate()) {
+  //     // Show an error message or feedback if the form is invalid
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Please correct the errors in the form')),
+  //     );
+  //     return; // Prevent submission
+  //   }
+  //
+  //   // Proceed only if the form is valid
+  //   if (password.text != confirm_password.text) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Passwords do not match')),
+  //     );
+  //     return;
+  //   }
+  //
+  //   UserListData updatedUser = UserListData(
+  //     firstName: first_name.text,
+  //     lastName: last_name.text,
+  //
+  //     email: email.text,
+  //     mobile: mobile.text,
+  //     gender: selectedgender,
+  //     city: selectedCity,
+  //     dob: dob,
+  //     age: age,
+  //     hobbies: selectedHobbies,
+  //   );
+  //
+  //   Navigator.pop(context, updatedUser);
+  // }
+  void addOrUpdateUser() async {
+    final isValid = _kaka.currentState!.validate();
+
+    if (isValid) {
+      final isUpdating = widget.user != null;
+
+      if (isUpdating) {
+        await updateUser();
+      } else {
+        await addUser();
       }
 
-      users.add(UserListData(
+      Navigator.pop(context);
+    }
+  }
+  Future updateUser() async {
+
+  }
+
+  Future addUser() async {
+    try {
+      String hobbies = selectedHobbies.join(',');
+      final newuser = UserListData(
         firstName: first_name.text,
         lastName: last_name.text,
-        address: address.text,
+        isFav: false,
         email: email.text,
         mobile: mobile.text,
         gender: selectedgender,
         city: selectedCity,
         dob: dob,
         age: age,
-        hobbies: selectedHobbies,
-      ));
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => UserList(users: users)),
+        hobbies: hobbies,
+        pass: password.text,
       );
-
-      // Clear controllers
-      first_name.clear();
-      last_name.clear();
-      mobile.clear();
-      // ... clear other controllers as needed ...
+      await UserDatabase.instance.create(newuser);
+      print('User added successfully!');
+    } catch (e) {
+      print('Error adding user: $e');
     }
   }
+
+
 }
 
 // Keep your existing Hobbies widget class with updated styling
@@ -325,7 +422,7 @@ class _HobbiesState extends State<Hobbies> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+      return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("Hobbies",
